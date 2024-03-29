@@ -10,6 +10,31 @@ from torch.distributions.multinomial import Multinomial
 import math
 
 class PHMLayer(nn.Module):
+    """
+    A PyTorch module representing the PHM (Product of Hadamard Matrices) layer.
+
+    Args:
+        n (int): The number of blocks in the PHM layer.
+        in_features (int): The number of input features.
+        out_features (int): The number of output features.
+
+    Attributes:
+        n (int): The number of blocks in the PHM layer.
+        in_features (int): The number of input features.
+        out_features (int): The number of output features.
+        bias (torch.Tensor): The learnable bias of shape (out_features,).
+        a (torch.Tensor): The learnable parameter of shape (n, n, n).
+        s (torch.Tensor): The learnable parameter of shape (n, out_features//n, in_features//n).
+        weight (torch.Tensor): The weight matrix of shape (out_features, in_features).
+
+    Methods:
+        kronecker_product1(a, b): Computes the Kronecker product of two tensors.
+        forward(input): Performs forward pass through the PHM layer.
+        extra_repr(): Returns a string representation of the PHM layer's attributes.
+        reset_parameters(): Resets the parameters of the PHM layer.
+
+    """
+
     def __init__(self, n, in_features, out_features):
         super(PHMLayer, self).__init__()
         self.n = n
@@ -30,7 +55,7 @@ class PHMLayer(nn.Module):
         bound = 1 / math.sqrt(fan_in)
         init.uniform_(self.bias, -bound, bound)
 
-    def kronecker_product1(self, a, b):
+    def kronecker_product1(self, a, b) -> Tensor:
         siz1 = torch.Size(torch.tensor(a.shape[-2:]) * torch.tensor(b.shape[-2:]))
         res = a.unsqueeze(-1).unsqueeze(-3) * b.unsqueeze(-2).unsqueeze(-4)
         siz0 = res.shape[:-4]
@@ -69,9 +94,11 @@ class PromptVQ(nn.Module):
         self.temp = temp
         self.p_emb = nn.Parameter(torch.Tensor(1, in_channels))
         
+        # PHM layers
         self.down_proj = PHMLayer(4, in_channels , hidden_channels) 
         self.up_proj = PHMLayer(4, hidden_channels, in_channels)
 
+        # Codebook initialization
         self.codebook = nn.Parameter(torch.Tensor(n_codebooks, in_channels), requires_grad=False)  
         self.register_buffer('_ema_cluster_size', torch.ones(self.n_codebooks)/self.n_samples)
         self.reset_parameters()
@@ -85,20 +112,20 @@ class PromptVQ(nn.Module):
         device = x.device
         x_p = graph_emb
 
+        # prompt generation
         h = self.down_proj(x_p)
         h = F.relu(h)
         p_c = self.up_proj(h)
 
         # Quantization
         p_q = []
-
         distances = (torch.sum(p_c**2, dim=1, keepdim=True) 
                         + torch.sum(self.codebook.data**2, dim=1)
                         - 2 * torch.matmul(p_c, self.codebook.data.t())) # num_graphs, num_codebooks
         
+        # sample from the multinomial distribution
         multi = Multinomial(total_count=self.n_samples, logits=(-distances-1e-5)/self.temp)
         samples = multi.sample().to(device)
-
 
         p_q = torch.matmul(samples, self.codebook.data).view(p_c.shape) / self.n_samples
         prompt = p_c + (p_q - p_c).detach() + self.p_emb
@@ -106,7 +133,7 @@ class PromptVQ(nn.Module):
         # consistency loss
         c_loss = torch.mean((p_q.detach() - p_c)**2)
 
-        # EMA
+        # EMA updating
         if training:
             self._ema_cluster_size = self._ema_cluster_size * self.beta + \
                                             (1 - self.beta) * \

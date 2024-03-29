@@ -1,2 +1,7 @@
 .history/
 __pycache__/
+wandb/
+ckpt/
+models/__pycache__/
+utils/__pycache__/
+results.log

@@ -376,7 +376,7 @@ class MoleculeDataset_aug(InMemoryDataset):
 
         elif self.dataset == 'chembl_filtered':
             ### get downstream test molecules.
-            from splitters import scaffold_split
+            from utils.splitters import scaffold_split
 
             ### 
             downstream_dir = [
@@ -952,7 +952,7 @@ class MoleculeDataset(InMemoryDataset):
 
         elif self.dataset == 'chembl_filtered':
             ### get downstream test molecules.
-            from splitters import scaffold_split
+            from utils.splitters import scaffold_split
 
             ### 
             downstream_dir = [
