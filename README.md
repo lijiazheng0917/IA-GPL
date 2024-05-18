@@ -15,6 +15,9 @@ conda activate IAGPL
 conda install -r requirements.txt
 ```
 
+## Datasets
+We have provided 6 relatively smaller molecule datasets under `dataset/` folder. Please download HIV and MUV datasets from [repo](https://github.com/snap-stanford/pretrain-gnns) and put them under the same folder. 
+
 ## Usage
 
 ```

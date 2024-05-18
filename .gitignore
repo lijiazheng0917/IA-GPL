@@ -5,3 +5,8 @@ ckpt/
 models/__pycache__/
 utils/__pycache__/
 results.log
+rebuttal/
+rebuttal_IA-GPL.md
+rebuttal.md
+run_nips.sh
+run_rebuttal.sh
