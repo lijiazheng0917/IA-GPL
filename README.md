@@ -1,6 +1,6 @@
 # IA-GPL
 
-This repository contains the pytorch code for '**Instance-Aware Graph Prompt Learning**' which is under review. We insert instance-aware prompts to improve performance and efficiency in downstream graph-related tasks.
+This repository contains the pytorch code for '**Instance-Aware Graph Prompt Learning**' which is accepted in TMLR. We insert instance-aware prompts to improve performance and efficiency in downstream graph-related tasks.
 
 ## Model Architecture
 ![model figure](./model_fig.png)
